@@ -32,5 +32,6 @@ const rest = new REST().setToken(process.env.DISCORD_TOKEN);
         console.log(`Sucesso ao recarregar ${data.length} comandos de aplicativo (/).`);
     } catch (error) {
         console.error(error);
+        process.exit(1);
     }
 })();
