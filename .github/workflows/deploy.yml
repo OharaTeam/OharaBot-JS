@@ -19,6 +19,7 @@ jobs:
             cd ~/apps/OharaBot-JS
             git pull origin main
             docker build -t ohara-bot .
+            docker run --rm --env-file .env ohara-bot bun run deploy:commands
             docker stop ohara-bot || true
             docker rm ohara-bot || true
             docker run -d --name ohara-bot --network ohara-network --restart always --env-file .env ohara-bot

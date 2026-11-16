@@ -1,6 +1,6 @@
 const logger = require('../utils/logger');
 require('dotenv').config();
-
+const { getApiDestination } = require('../utils/apiDestination');
 // Função auxiliar para evitar Rate Limit (espera X ms)
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -71,8 +71,9 @@ async function syncGuildMembers(guild, batchSize = 15) {
 }
 
 async function sendBatchToDatabase(data, currentBatch, totalBatches) {
-   // (Seu código original aqui continua igual)
-   const backEndUrl = `${process.env.BACK_END_URL}/membros`;
+
+    const backEndUrl = getApiDestination('membros');
+
     logger.debug(`Enviando lote ${currentBatch}/${totalBatches} com ${data.length} membros para: ${backEndUrl}`);
     const response = await fetch(backEndUrl, {
         method: 'POST',

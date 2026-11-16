@@ -4,6 +4,8 @@ require('dotenv').config();
  * Extrai e sincroniza os cargos do servidor.
  * @param {import('discord.js').Guild} guild - O servidor do Discord.
  */
+const { getApiDestination } = require('../utils/apiDestination');
+
 async function syncGuildRoles(guild) {
     try {
         // Garante que todos os cargos estão em cache
@@ -41,7 +43,7 @@ async function syncGuildRoles(guild) {
 }
 
 async function sendRolesToDatabase(data) {
-    const backEndUrl = `${process.env.BACK_END_URL}/cargos`;
+    const backEndUrl = getApiDestination('cargos');
     logger.debug(`Enviando ${data.length} cargos para: ${backEndUrl}`);
     const response = await fetch(backEndUrl, {
         method: 'POST',

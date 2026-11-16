@@ -3,11 +3,17 @@ const { checkAdmin } = require('../../functions/checkAdmin');
 const { syncGuildMembers } = require('../../functions/syncDataBase');
 const { syncGuildRoles } = require('../../functions/syncRoles');
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 module.exports = {
     cooldown: 300,
     data: new SlashCommandBuilder()
-        .setName('sincronizar-database')
-        .setDescription('Sincronizar os dados dos membros com o banco de dados (Somente Devs).'),
+        .setName(isProduction ? 'sincronizar-database' : 'sincronizar-localmente')
+        .setDescription(
+            isProduction
+                ? 'Sincronizar os dados dos membros com o banco de dados (Somente Devs).'
+                : 'Sincronizar os dados dos membros localmente (Somente Devs).'
+        ),
     async execute(interaction) {
         if (!(await checkAdmin(interaction))) return;
         await interaction.reply({

@@ -3,6 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { Client, Collection, GatewayIntentBits } = require('discord.js');
 const logger = require('./utils/logger');
+const { verifyLocalEnvironment } = require('./utils/verifyEnvironment');
 
 // Cria a instância do cliente
 const client = new Client({
@@ -61,10 +62,16 @@ process.on('uncaughtException', (error) => {
     process.exit(1);
 });
 
+const environment = verifyLocalEnvironment();
+
 client
     .login(process.env.DISCORD_TOKEN)
     .then(() => {
-        logger.info('OharaBot Acordou 🚨');
+        if (environment === 'development') {
+            logger.warn('Ambiente de desenvolvimento detectado. Certifique-se de que o backend local está rodando em http://localhost:3000');
+        } else {
+            logger.warn('Ambiente de produção detectado. Certifique-se de que o backend está acessível no URL configurado.');
+        }
         
         // Inicia o servidor web passando a instância do bot
         const { startServer } = require('./api/server');
