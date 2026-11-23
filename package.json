@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "nodemon src/index.js",
     "start": "bun src/index.js",
-    "deploy:commands": "bun deploy-commands.js",
+    "deploy:commands": "bun src/scripts/deploy-commands.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
