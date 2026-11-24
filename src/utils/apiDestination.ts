@@ -1,15 +1,18 @@
 import { verifyLocalEnvironment } from '@/utils/verifyEnvironment';
 import { logger } from '@/utils/logger';
 
-export function getApiDestination(endpoint: string): string {
-  const environment = verifyLocalEnvironment();
+export type SyncTarget = 'local' | 'producao';
+
+export function getApiDestination(endpoint: string, target?: SyncTarget): string {
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
 
-  if (environment === 'development') {
-    logger.debug(`Ambiente de desenvolvimento detectado. Usando URL local para endpoint: ${cleanEndpoint}`);
+  const isLocal = target ? target === 'local' : verifyLocalEnvironment() === 'development';
+
+  if (isLocal) {
+    logger.debug(`Destino API [local] para endpoint: ${cleanEndpoint}`);
     return `http://localhost:3000/${cleanEndpoint}`;
   } else {
-    logger.debug(`Ambiente de produção detectado. Usando URL de produção para endpoint: ${cleanEndpoint}`);
+    logger.debug(`Destino API [produção] para endpoint: ${cleanEndpoint}`);
     const baseUrl = (process.env.BACK_END_URL ?? '').replace(/\/$/, '');
     return `${baseUrl}/${cleanEndpoint}`;
   }

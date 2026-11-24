@@ -1,11 +1,11 @@
 import type { Guild } from 'discord.js';
 import { logger } from '@/utils/logger';
-import { getApiDestination } from '@/utils/apiDestination';
+import { getApiDestination, type SyncTarget } from '@/utils/apiDestination';
 import { getErrorMessage } from '@/utils/errors';
 import type { GuildRoleSyncData } from '@/types/sync';
 
-async function sendRolesToDatabase(data: GuildRoleSyncData[]): Promise<void> {
-  const backEndUrl = getApiDestination('cargos');
+async function sendRolesToDatabase(data: GuildRoleSyncData[], target?: SyncTarget): Promise<void> {
+  const backEndUrl = getApiDestination('cargos', target);
   logger.debug(`Enviando ${data.length} cargos para: ${backEndUrl}`);
   const response = await fetch(backEndUrl, {
     method: 'POST',
@@ -23,7 +23,7 @@ async function sendRolesToDatabase(data: GuildRoleSyncData[]): Promise<void> {
   logger.debug('Sucesso! Back-end processou o lote de cargos.');
 }
 
-export async function syncGuildRoles(guild: Guild): Promise<number> {
+export async function syncGuildRoles(guild: Guild, target?: SyncTarget): Promise<number> {
   try {
     const roles = await guild.roles.fetch();
     logger.info(
@@ -48,7 +48,7 @@ export async function syncGuildRoles(guild: Guild): Promise<number> {
       return 0;
     }
 
-    await sendRolesToDatabase(allRolesData);
+    await sendRolesToDatabase(allRolesData, target);
     logger.info('✅ Sincronização de cargos finalizada com sucesso.');
     return allRolesData.length;
   } catch (error) {

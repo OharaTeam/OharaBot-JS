@@ -1,6 +1,6 @@
 import type { Guild, User } from 'discord.js';
 import { logger } from '@/utils/logger';
-import { getApiDestination } from '@/utils/apiDestination';
+import { getApiDestination, type SyncTarget } from '@/utils/apiDestination';
 import { getErrorMessage } from '@/utils/errors';
 import type { GuildMemberSyncData } from '@/types/sync';
 
@@ -10,9 +10,10 @@ const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout
 async function sendBatchToDatabase(
   data: GuildMemberSyncData[],
   currentBatch: number,
-  totalBatches: number
+  totalBatches: number,
+  target?: SyncTarget
 ): Promise<void> {
-  const backEndUrl = getApiDestination('membros');
+  const backEndUrl = getApiDestination('membros', target);
 
   logger.debug(`Enviando lote ${currentBatch}/${totalBatches} com ${data.length} membros para: ${backEndUrl}`);
   const response = await fetch(backEndUrl, {
@@ -30,7 +31,7 @@ async function sendBatchToDatabase(
   }
 }
 
-export async function syncGuildMembers(guild: Guild, batchSize = 15): Promise<number> {
+export async function syncGuildMembers(guild: Guild, batchSize = 15, target?: SyncTarget): Promise<number> {
   try {
     const members = await guild.members.fetch();
     logger.info(
@@ -82,7 +83,7 @@ export async function syncGuildMembers(guild: Guild, batchSize = 15): Promise<nu
       const end = start + batchSize;
       const batch = allMembersData.slice(start, end);
 
-      await sendBatchToDatabase(batch, i + 1, totalBatches);
+      await sendBatchToDatabase(batch, i + 1, totalBatches, target);
     }
     logger.info('✅ Sincronização de membros finalizada com sucesso.');
     return allMembersData.length;

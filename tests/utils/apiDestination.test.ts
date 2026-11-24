@@ -52,4 +52,35 @@ describe('apiDestination', () => {
     const destination = getApiDestination('/users/sync');
     expect(destination).toBe('https://api.ohara.com.br/users/sync');
   });
+
+  describe('com target explícito', () => {
+    it('deve retornar URL local com target="local" mesmo se NODE_ENV for production', () => {
+      process.env.NODE_ENV = 'production';
+      process.env.BACK_END_URL = 'https://api.ohara.com.br';
+      const destination = getApiDestination('membros', 'local');
+      expect(destination).toBe('http://localhost:3000/membros');
+      expect(debugSpy).toHaveBeenCalled();
+    });
+
+    it('deve normalizar barra inicial com target="local"', () => {
+      process.env.NODE_ENV = 'production';
+      const destination = getApiDestination('/cargos', 'local');
+      expect(destination).toBe('http://localhost:3000/cargos');
+    });
+
+    it('deve retornar URL de produção com target="producao" mesmo se NODE_ENV for development', () => {
+      process.env.NODE_ENV = 'development';
+      process.env.BACK_END_URL = 'https://api.ohara.com.br';
+      const destination = getApiDestination('membros', 'producao');
+      expect(destination).toBe('https://api.ohara.com.br/membros');
+      expect(debugSpy).toHaveBeenCalled();
+    });
+
+    it('deve normalizar barra inicial e trailing slash de BACK_END_URL com target="producao"', () => {
+      process.env.NODE_ENV = 'development';
+      process.env.BACK_END_URL = 'https://api.ohara.com.br/';
+      const destination = getApiDestination('/cargos', 'producao');
+      expect(destination).toBe('https://api.ohara.com.br/cargos');
+    });
+  });
 });
