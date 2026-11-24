@@ -33,7 +33,10 @@ const command: Command = {
       await interaction.editReply(`🔄 Iniciando sincronização [${targetLabel}]... Acompanhe no console.`);
 
       const rolesProcessed = await syncGuildRoles(guild, target);
-      if (rolesProcessed === 0 && (guild.roles?.cache?.size ?? 0) > 0) {
+      const customRolesCount = Array.from(guild.roles?.cache?.values() ?? []).filter(
+        (role) => role.id !== guild.id
+      ).length;
+      if (rolesProcessed === 0 && customRolesCount > 0) {
         await interaction.editReply(
           '⚠️ Atenção: Sincronização de cargos falhou ou retornou 0. A sincronização de membros foi abortada para evitar erros.'
         );

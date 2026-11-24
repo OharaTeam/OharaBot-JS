@@ -211,6 +211,28 @@ describe('Comando /sincronizar-dados', () => {
       );
     });
 
+    it('não deve abortar a sincronização de membros se a guilda possuir apenas o cargo @everyone e rolesProcessed for 0', async () => {
+      mockSyncGuildRoles.mockImplementationOnce(async () => 0);
+      mockSyncGuildMembers.mockImplementationOnce(async () => 10);
+      const onlyEveryoneGuild = {
+        id: 'guild-123',
+        name: 'Ohara Community',
+        roles: {
+          cache: new Map([['guild-123', { id: 'guild-123', name: '@everyone' }]]),
+        },
+      } as unknown as Guild;
+
+      const { interaction, editReplyMock } = createMockInteraction('local', onlyEveryoneGuild);
+
+      await command.execute(interaction);
+
+      expect(mockSyncGuildRoles).toHaveBeenCalled();
+      expect(mockSyncGuildMembers).toHaveBeenCalled();
+      expect(editReplyMock).toHaveBeenCalledWith(
+        '✅ [Local (localhost:3000)] Dados de **10** membros e **0** cargos processados com sucesso.'
+      );
+    });
+
     it('deve exibir mensagem de falha se syncGuildMembers retornar 0 membros processados', async () => {
       mockSyncGuildMembers.mockImplementationOnce(async () => 0);
       const { interaction, editReplyMock } = createMockInteraction('local');
