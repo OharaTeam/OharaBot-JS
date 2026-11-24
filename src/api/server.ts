@@ -14,8 +14,8 @@ export interface OharaExpressApp extends Express {
 
 export function startServer(client: Client): OharaExpressApp {
   const app = express() as OharaExpressApp;
-  const portEnv = process.env.PORT;
-  const PORT = portEnv !== undefined && portEnv !== '' ? Number(portEnv) : 3001;
+  const parsedPort = Number(process.env.PORT);
+  const PORT = !Number.isNaN(parsedPort) && parsedPort >= 0 && parsedPort <= 65535 ? parsedPort : 3001;
   let isSyncInProgress = false;
 
   app.use(express.json());
