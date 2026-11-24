@@ -265,4 +265,56 @@ describe('API Server (Express)', () => {
     });
     expect(mockLoggerHelper.spies.error).toHaveBeenCalled();
   });
+
+  it('POST /sincronizar-dados deve retornar 409 Conflict se uma sincronização já estiver em andamento', async () => {
+    let finishFirstSync!: () => void;
+    const syncGate = new Promise<number>((resolve) => {
+      finishFirstSync = () => resolve(5);
+    });
+
+    mockSyncGuildRoles.mockImplementationOnce(async () => syncGate);
+
+    const mockGuild = { id: 'ohara-test-guild', name: 'Ohara' } as unknown as Guild;
+    const mockClient = {
+      guilds: {
+        fetch: mock(async () => mockGuild),
+      },
+    } as unknown as Client;
+    const url = await startTestServer(mockClient);
+
+    // Dispara a primeira requisição que ficará travada aguardando o finishFirstSync
+    const firstRequestPromise = fetch(`${url}/sincronizar-dados`, {
+      method: 'POST',
+      headers: { 'x-api-key': 'valid-test-bot-key' },
+    });
+
+    // Aguarda um pequeno tick para a rota receber a primeira requisição e ativar o lock
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    // Segunda requisição disparada enquanto a primeira ainda está ativa
+    const concurrentResponse = await fetch(`${url}/sincronizar-dados`, {
+      method: 'POST',
+      headers: { 'x-api-key': 'valid-test-bot-key' },
+    });
+    const concurrentBody = (await concurrentResponse.json()) as { error: string; message: string };
+
+    expect(concurrentResponse.status).toBe(409);
+    expect(concurrentBody).toEqual({
+      error: 'Conflict',
+      message: 'Uma sincronização de dados já está em andamento.',
+    });
+    expect(mockLoggerHelper.spies.warn).toHaveBeenCalled();
+
+    // Libera a primeira requisição
+    finishFirstSync();
+    const firstResponse = await firstRequestPromise;
+    expect(firstResponse.status).toBe(200);
+
+    // Uma terceira requisição após o término deve poder executar normalmente
+    const subsequentResponse = await fetch(`${url}/sincronizar-dados`, {
+      method: 'POST',
+      headers: { 'x-api-key': 'valid-test-bot-key' },
+    });
+    expect(subsequentResponse.status).toBe(200);
+  });
 });

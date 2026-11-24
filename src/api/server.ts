@@ -16,6 +16,7 @@ export function startServer(client: Client): OharaExpressApp {
   const app = express() as OharaExpressApp;
   const portEnv = process.env.PORT;
   const PORT = portEnv !== undefined && portEnv !== '' ? Number(portEnv) : 3001;
+  let isSyncInProgress = false;
 
   app.use(express.json());
 
@@ -26,6 +27,15 @@ export function startServer(client: Client): OharaExpressApp {
 
   // Rota protegida com apiKeyAuth e resolução defensiva de guilda (D-01, D-05, D-06)
   app.post('/sincronizar-dados', apiKeyAuth, async (_req: Request, res: Response) => {
+    if (isSyncInProgress) {
+      logger.warn('⚠️ Tentativa de sincronização concorrente bloqueada: já em andamento.');
+      return res.status(409).json({
+        error: 'Conflict',
+        message: 'Uma sincronização de dados já está em andamento.',
+      });
+    }
+
+    isSyncInProgress = true;
     logger.info('🔃 Sincronização agendada iniciada via API');
     try {
       let guild;
@@ -58,6 +68,8 @@ export function startServer(client: Client): OharaExpressApp {
         error: 'Internal Server Error',
         message: 'Erro ao sincronizar dados',
       });
+    } finally {
+      isSyncInProgress = false;
     }
   });
 
