@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { Client, Collection, GatewayIntentBits } from 'discord.js';
 import logger from '@/utils/logger';
-import { verifyLocalEnvironment } from '@/utils/verifyEnvironment';
+import { verifyEnvironment } from '@/utils/verifyEnvironment';
 import { startServer } from '@/api/server';
 import { getErrorMessage } from '@/utils/errors';
 import type { Command, Event } from '@/types';
@@ -69,7 +69,7 @@ process.on('uncaughtException', (error) => {
   process.exit(1);
 });
 
-const environment = verifyLocalEnvironment();
+const { environment } = verifyEnvironment();
 
 client
   .login(process.env.DISCORD_TOKEN)
