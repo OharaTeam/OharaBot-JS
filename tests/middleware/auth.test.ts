@@ -36,9 +36,52 @@ describe('apiKeyAuth middleware', () => {
     expect(next).toHaveBeenCalled();
   });
 
+  it('deve chamar next() quando x-api-key tiver espaços em branco nas pontas', () => {
+    const req = {
+      headers: { 'x-api-key': '   secret-test-key   ' },
+      path: '/sincronizar-dados',
+      method: 'POST',
+    } as unknown as Request;
+    const res = { status: mock(() => res), json: mock(() => res) } as unknown as Response;
+    const next = mock(() => {}) as unknown as NextFunction;
+
+    apiKeyAuth(req, res, next);
+
+    expect(next).toHaveBeenCalled();
+  });
+
+  it('deve chamar next() quando process.env.BOT_KEY contiver espaços em branco nas pontas', () => {
+    process.env.BOT_KEY = '   secret-test-key   ';
+    const req = {
+      headers: { 'x-api-key': 'secret-test-key' },
+      path: '/sincronizar-dados',
+      method: 'POST',
+    } as unknown as Request;
+    const res = { status: mock(() => res), json: mock(() => res) } as unknown as Response;
+    const next = mock(() => {}) as unknown as NextFunction;
+
+    apiKeyAuth(req, res, next);
+
+    expect(next).toHaveBeenCalled();
+  });
+
   it('deve chamar next() quando Authorization: Bearer <key> for válida', () => {
     const req = {
       headers: { authorization: 'Bearer secret-test-key' },
+      path: '/sincronizar-dados',
+      method: 'POST',
+    } as unknown as Request;
+    const res = { status: mock(() => res), json: mock(() => res) } as unknown as Response;
+    const next = mock(() => {}) as unknown as NextFunction;
+
+    apiKeyAuth(req, res, next);
+
+    expect(next).toHaveBeenCalled();
+  });
+
+  it('deve chamar next() quando Authorization: BEARER (maiúsculo) tiver espaços múltiplos e chave válida', () => {
+    const req = {
+      headers: { authorization: 'BEARER    secret-test-key   ' },
       path: '/sincronizar-dados',
       method: 'POST',
     } as unknown as Request;
