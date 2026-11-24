@@ -60,8 +60,10 @@ for (const file of eventFiles) {
   }
 }
 
-process.on('unhandledRejection', (reason, promise) => {
-  logger.error(`Unhandled Rejection at: ${promise}, reason: ${reason}`);
+process.on('unhandledRejection', (reason) => {
+  const message = getErrorMessage(reason);
+  const stack = reason instanceof Error ? `\n${reason.stack ?? ''}` : '';
+  logger.error(`Unhandled Rejection: ${message}${stack}`);
 });
 
 process.on('uncaughtException', (error) => {
