@@ -1,4 +1,3 @@
-import { verifyLocalEnvironment } from '@/utils/verifyEnvironment';
 import { logger } from '@/utils/logger';
 
 export type SyncTarget = 'local' | 'producao';
@@ -6,7 +5,7 @@ export type SyncTarget = 'local' | 'producao';
 export function getApiDestination(endpoint: string, target?: SyncTarget): string {
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
 
-  const isLocal = target ? target === 'local' : verifyLocalEnvironment() === 'development';
+  const isLocal = target ? target === 'local' : (process.env.NODE_ENV || 'development') === 'development';
 
   if (isLocal) {
     logger.debug(`Destino API [local] para endpoint: ${cleanEndpoint}`);

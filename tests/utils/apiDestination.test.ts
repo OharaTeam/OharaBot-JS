@@ -32,6 +32,13 @@ describe('apiDestination', () => {
     expect(debugSpy).toHaveBeenCalled();
   });
 
+  it('deve resolver ambiente local sem depender de OHARA_ID ou acionar verifyEnvironment', () => {
+    delete (process.env as Record<string, string | undefined>).OHARA_ID;
+    delete process.env.NODE_ENV;
+    const destination = getApiDestination('test');
+    expect(destination).toBe('http://localhost:3000/test');
+  });
+
   it('deve evitar barras duplicadas ao receber endpoint com barra no início em desenvolvimento', () => {
     process.env.NODE_ENV = 'development';
     const destination = getApiDestination('/users/sync');
