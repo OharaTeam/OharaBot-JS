@@ -82,5 +82,27 @@ describe('apiDestination', () => {
       const destination = getApiDestination('/cargos', 'producao');
       expect(destination).toBe('https://api.ohara.com.br/cargos');
     });
+
+    it('deve lançar erro explicativo se BACK_END_URL não estiver configurada com target="producao"', () => {
+      delete process.env.BACK_END_URL;
+      expect(() => getApiDestination('membros', 'producao')).toThrow(
+        'Variável BACK_END_URL não configurada no ambiente para destino de produção.'
+      );
+    });
+
+    it('deve lançar erro explicativo se BACK_END_URL for apenas espaços com target="producao"', () => {
+      process.env.BACK_END_URL = '   ';
+      expect(() => getApiDestination('membros', 'producao')).toThrow(
+        'Variável BACK_END_URL não configurada no ambiente para destino de produção.'
+      );
+    });
+  });
+
+  it('deve lançar erro explicativo se BACK_END_URL não estiver configurada em ambiente de produção implícito', () => {
+    process.env.NODE_ENV = 'production';
+    delete process.env.BACK_END_URL;
+    expect(() => getApiDestination('membros')).toThrow(
+      'Variável BACK_END_URL não configurada no ambiente para destino de produção.'
+    );
   });
 });
