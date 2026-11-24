@@ -89,6 +89,6 @@ export async function syncGuildMembers(guild: Guild, batchSize = 15, target?: Sy
     return allMembersData.length;
   } catch (error) {
     logger.error(`Erro ao sincronizar membros: ${getErrorMessage(error)}`);
-    return 0;
+    throw error;
   }
 }

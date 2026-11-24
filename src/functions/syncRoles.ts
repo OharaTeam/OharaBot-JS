@@ -53,6 +53,6 @@ export async function syncGuildRoles(guild: Guild, target?: SyncTarget): Promise
     return allRolesData.length;
   } catch (error) {
     logger.error(`Erro ao sincronizar cargos: ${getErrorMessage(error)}`);
-    return 0;
+    throw error;
   }
 }
