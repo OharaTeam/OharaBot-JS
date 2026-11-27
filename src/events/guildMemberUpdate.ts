@@ -22,7 +22,7 @@ const event: Event<Events.GuildMemberUpdate> = {
     if (!newMember.roles.cache.has(kaizokuRoleId)) {
       try {
         updatedMember = await newMember.roles.add(kaizokuRoleId, 'Onboarding concluído (aceite de regras)');
-        logger.info(`✅ Cargo Kaizoku (${kaizokuRoleId}) concedido para ${newMember.user.tag} (${newMember.id}).`);
+        logger.info(`✅ Cargo Kaizoku concedido para ${newMember.user.tag} (${newMember.id}).`);
       } catch (error) {
         logger.error(`❌ Erro ao conceder cargo Kaizoku para ${newMember.user.tag}: ${getErrorMessage(error)}`);
         return;
