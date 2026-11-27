@@ -5,6 +5,7 @@ import logger from '@/utils/logger';
 describe('verifyEnvironment', () => {
   const originalEnv = process.env.NODE_ENV;
   const originalOharaId = process.env.OHARA_ID;
+  const originalKaizokuRoleId = process.env.KAIZOKU_ROLE_ID;
   let debugSpy: ReturnType<typeof spyOn>;
   let errorSpy: ReturnType<typeof spyOn>;
   let exitSpy: ReturnType<typeof spyOn>;
@@ -16,6 +17,7 @@ describe('verifyEnvironment', () => {
       throw new Error(`process.exit called with ${code}`);
     });
     process.env.OHARA_ID = 'mock-ohara-id';
+    process.env.KAIZOKU_ROLE_ID = 'mock-kaizoku-role-id';
   });
 
   afterEach(() => {
@@ -33,6 +35,12 @@ describe('verifyEnvironment', () => {
       process.env.OHARA_ID = originalOharaId;
     } else {
       delete (process.env as Record<string, string | undefined>).OHARA_ID;
+    }
+
+    if (originalKaizokuRoleId !== undefined) {
+      process.env.KAIZOKU_ROLE_ID = originalKaizokuRoleId;
+    } else {
+      delete (process.env as Record<string, string | undefined>).KAIZOKU_ROLE_ID;
     }
   });
 
@@ -64,15 +72,17 @@ describe('verifyEnvironment', () => {
     expect(debugSpy).toHaveBeenCalled();
   });
 
-  it('deve retornar objeto com environment e oharaId quando OHARA_ID estiver definido', () => {
+  it('deve retornar objeto com environment, oharaId e kaizokuRoleId quando variáveis obrigatórias estiverem definidas', () => {
     process.env.NODE_ENV = 'production';
     process.env.OHARA_ID = 'ohara-valid-id';
+    process.env.KAIZOKU_ROLE_ID = 'kaizoku-valid-role-id';
 
     const result = verifyEnvironment();
 
     expect(result).toEqual({
       environment: 'production',
       oharaId: 'ohara-valid-id',
+      kaizokuRoleId: 'kaizoku-valid-role-id',
     });
     expect(debugSpy).toHaveBeenCalled();
     expect(exitSpy).not.toHaveBeenCalled();
@@ -88,6 +98,22 @@ describe('verifyEnvironment', () => {
 
   it('deve encerrar o processo com código 1 e logar erro quando OHARA_ID for string vazia ou em branco', () => {
     process.env.OHARA_ID = '   ';
+
+    expect(() => verifyEnvironment()).toThrow('process.exit called with 1');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(errorSpy).toHaveBeenCalled();
+  });
+
+  it('deve encerrar o processo com código 1 e logar erro quando KAIZOKU_ROLE_ID for indefinido', () => {
+    delete (process.env as Record<string, string | undefined>).KAIZOKU_ROLE_ID;
+
+    expect(() => verifyEnvironment()).toThrow('process.exit called with 1');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(errorSpy).toHaveBeenCalled();
+  });
+
+  it('deve encerrar o processo com código 1 e logar erro quando KAIZOKU_ROLE_ID for string vazia ou em branco', () => {
+    process.env.KAIZOKU_ROLE_ID = '   ';
 
     expect(() => verifyEnvironment()).toThrow('process.exit called with 1');
     expect(exitSpy).toHaveBeenCalledWith(1);
