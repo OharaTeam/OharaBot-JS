@@ -1,4 +1,4 @@
-import type { Guild, User } from 'discord.js';
+import type { Guild, GuildMember, User } from 'discord.js';
 import { logger } from '@/utils/logger';
 import { getApiDestination, type SyncTarget } from '@/utils/apiDestination';
 import { getErrorMessage } from '@/utils/errors';
@@ -31,6 +31,38 @@ async function sendBatchToDatabase(
   }
 }
 
+export async function extractMemberData(member: GuildMember): Promise<GuildMemberSyncData> {
+  let fullUser: User;
+  try {
+    fullUser = await member.guild.client.users.fetch(member.user.id, { force: true });
+  } catch (err) {
+    logger.warn(`Não foi possível buscar detalhes do user ${member.user.tag}: ${getErrorMessage(err)}`);
+    fullUser = member.user;
+  }
+
+  return {
+    discordId: fullUser.id,
+    username: fullUser.username,
+    globalName: fullUser.globalName,
+    serverNickName: member.nickname,
+    avatarUrl: fullUser.displayAvatarURL({ forceStatic: false, size: 512 }),
+    serverAvatarUrl: member.avatarURL({ forceStatic: false, size: 512 }),
+    bannerUrl: fullUser.bannerURL({ forceStatic: false, size: 512 }) || null,
+    serverBannerUrl: member.bannerURL({ forceStatic: false, size: 512 }) || null,
+    isBot: fullUser.bot,
+    colorHex: member.displayHexColor,
+    rolesIds: member.roles.cache.filter((role) => role.id !== member.guild.id).map((role) => role.id),
+    accountCreatedAt: fullUser.createdAt.toISOString(),
+    joinedServerAt: member.joinedAt ? member.joinedAt.toISOString() : null,
+    premiumSince: member.premiumSince ? member.premiumSince.toISOString() : null,
+  };
+}
+
+export async function syncSingleMember(member: GuildMember, target?: SyncTarget): Promise<void> {
+  const memberPayload = await extractMemberData(member);
+  await sendBatchToDatabase([memberPayload], 1, 1, target);
+}
+
 export async function syncGuildMembers(guild: Guild, batchSize = 15, target?: SyncTarget): Promise<number> {
   try {
     const members = await guild.members.fetch();
@@ -42,30 +74,7 @@ export async function syncGuildMembers(guild: Guild, batchSize = 15, target?: Sy
     let count = 0;
 
     for (const member of members.values()) {
-      let fullUser: User;
-      try {
-        fullUser = await guild.client.users.fetch(member.user.id, { force: true });
-      } catch (err) {
-        logger.warn(`Não foi possível buscar detalhes do user ${member.user.tag}: ${getErrorMessage(err)}`);
-        fullUser = member.user;
-      }
-
-      const memberPayload: GuildMemberSyncData = {
-        discordId: fullUser.id,
-        username: fullUser.username,
-        globalName: fullUser.globalName,
-        serverNickName: member.nickname,
-        avatarUrl: fullUser.displayAvatarURL({ forceStatic: false, size: 512 }),
-        serverAvatarUrl: member.avatarURL({ forceStatic: false, size: 512 }),
-        bannerUrl: fullUser.bannerURL({ forceStatic: false, size: 512 }) || null,
-        serverBannerUrl: member.bannerURL({ forceStatic: false, size: 512 }) || null,
-        isBot: fullUser.bot,
-        colorHex: member.displayHexColor,
-        rolesIds: member.roles.cache.filter((role) => role.id !== guild.id).map((role) => role.id),
-        accountCreatedAt: fullUser.createdAt.toISOString(),
-        joinedServerAt: member.joinedAt ? member.joinedAt.toISOString() : null,
-        premiumSince: member.premiumSince ? member.premiumSince.toISOString() : null,
-      };
+      const memberPayload = await extractMemberData(member);
 
       allMembersData.push(memberPayload);
       count++;
