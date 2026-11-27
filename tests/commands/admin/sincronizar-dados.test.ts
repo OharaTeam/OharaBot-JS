@@ -1,14 +1,14 @@
-import { describe, it, expect, beforeEach, afterEach, mock } from 'bun:test';
+import { describe, it, expect, beforeEach, afterEach, mock, spyOn } from 'bun:test';
 import path from 'node:path';
 import fs from 'node:fs';
 import type { ChatInputCommandInteraction, Guild, Client } from 'discord.js';
 import logger from '@/utils/logger';
 import { createMockLogger } from '../../helpers/mockLogger';
+import * as syncDataBaseModule from '@/functions/syncDataBase';
 
 // Mocks para as dependências antes de importar o comando
 const mockCheckAdmin = mock(async (_interaction: ChatInputCommandInteraction) => true);
 const mockSyncGuildRoles = mock(async (_guild: Guild, _target?: 'local' | 'producao') => 5);
-const mockSyncGuildMembers = mock(async (_guild: Guild, _batchSize = 15, _target?: 'local' | 'producao') => 20);
 const mockGetOharaGuild = mock(
   async (_client: Client) =>
     ({
@@ -26,10 +26,6 @@ mock.module('@/functions/syncRoles', () => ({
   syncGuildRoles: mockSyncGuildRoles,
 }));
 
-mock.module('@/functions/syncDataBase', () => ({
-  syncGuildMembers: mockSyncGuildMembers,
-}));
-
 mock.module('@/utils/resolveGuild', () => ({
   getOharaGuild: mockGetOharaGuild,
 }));
@@ -39,18 +35,18 @@ const { default: command } = await import('@/commands/admin/sincronizar-dados');
 
 describe('Comando /sincronizar-dados', () => {
   let mockLoggerHelper: ReturnType<typeof createMockLogger>;
+  let mockSyncGuildMembers: ReturnType<typeof spyOn>;
   const originalNodeEnv = process.env.NODE_ENV;
 
   beforeEach(() => {
     mockLoggerHelper = createMockLogger(logger);
     mockCheckAdmin.mockReset();
     mockSyncGuildRoles.mockReset();
-    mockSyncGuildMembers.mockReset();
     mockGetOharaGuild.mockReset();
 
     mockCheckAdmin.mockImplementation(async () => true);
     mockSyncGuildRoles.mockImplementation(async () => 5);
-    mockSyncGuildMembers.mockImplementation(async () => 20);
+    mockSyncGuildMembers = spyOn(syncDataBaseModule, 'syncGuildMembers').mockImplementation(async () => 20);
     mockGetOharaGuild.mockImplementation(
       async () =>
         ({
@@ -63,6 +59,7 @@ describe('Comando /sincronizar-dados', () => {
 
   afterEach(() => {
     mockLoggerHelper.restore();
+    mockSyncGuildMembers.mockRestore();
     if (originalNodeEnv !== undefined) {
       process.env.NODE_ENV = originalNodeEnv;
     } else {

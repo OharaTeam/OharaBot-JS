@@ -1,26 +1,23 @@
-import { describe, it, expect, beforeEach, afterEach, mock } from 'bun:test';
+import { describe, it, expect, beforeEach, afterEach, mock, spyOn } from 'bun:test';
 import type { AddressInfo } from 'node:net';
 import type { Client, Guild } from 'discord.js';
 import logger from '@/utils/logger';
 import { createMockLogger } from '../helpers/mockLogger';
+import * as syncDataBaseModule from '@/functions/syncDataBase';
 
 // Mocks para as funções de sincronização antes de importar startServer
 const mockSyncGuildRoles = mock(async (_guild: Guild) => 8);
-const mockSyncGuildMembers = mock(async (_guild: Guild) => 42);
 
 mock.module('@/functions/syncRoles', () => ({
   syncGuildRoles: mockSyncGuildRoles,
 }));
 
-mock.module('@/functions/syncDataBase', () => ({
-  syncGuildMembers: mockSyncGuildMembers,
-}));
-
-// Importa startServer após mock.module
+// Importa startServer após configuração dos mocks
 const { startServer } = await import('@/api/server');
 
 describe('API Server (Express)', () => {
   let mockLoggerHelper: ReturnType<typeof createMockLogger>;
+  let mockSyncGuildMembers: ReturnType<typeof spyOn>;
   const originalBotKey = process.env.BOT_KEY;
   const originalOharaId = process.env.OHARA_ID;
   const originalPort = process.env.PORT;
@@ -35,13 +32,13 @@ describe('API Server (Express)', () => {
     process.env.PORT = '0'; // Porta dinâmica alocada pelo SO
 
     mockSyncGuildRoles.mockReset();
-    mockSyncGuildMembers.mockReset();
     mockSyncGuildRoles.mockImplementation(async () => 8);
-    mockSyncGuildMembers.mockImplementation(async () => 42);
+    mockSyncGuildMembers = spyOn(syncDataBaseModule, 'syncGuildMembers').mockImplementation(async () => 42);
   });
 
   afterEach(async () => {
     mockLoggerHelper.restore();
+    mockSyncGuildMembers.mockRestore();
 
     if (activeApp?.httpServer) {
       const server = activeApp.httpServer;
